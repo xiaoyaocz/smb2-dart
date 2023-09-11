@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 
 import 'dart:math';
@@ -24,16 +23,15 @@ import 'tools/ntlm/type2.dart';
 import 'tools/smb_message.dart';
 
 class SMB {
+  late Uri uri;
+  late String ip;
+  int? port;
 
-  Uri uri;
-  String ip;
-  int port;
+  late String domain;
+  late String username;
+  late String password;
 
-  String domain;
-  String username;
-  String password;
-
-  bool debug;
+  late bool debug;
 
   // 自动断开时间
   Duration autoCloseTimeout;
@@ -41,13 +39,13 @@ class SMB {
   // 并发
   int packetConcurrency;
 
-  Socket socket;
+  late Socket socket;
 
-  int sessionId;
+  late int sessionId;
   int messageId = 0;
-  int treeId;
+  late int treeId;
 
-  List<int> processId;
+  late List<int> processId;
 
   bool isAsync = false;
   bool isMessageIdSetted = false;
@@ -55,14 +53,14 @@ class SMB {
   bool connectLock = false;
   bool connected = false;
 
-  List<int> nonce;
+  late List<int> nonce;
   String smbPath = '';
 
   List<String> rootPath = [];
 
-  Type2Message type2Message;
+  late Type2Message type2Message;
 
-  Map<String, Completer<SMBMessage>> responsesCompleter = {};
+  Map<String, Completer<SMBMessage>?> responsesCompleter = {};
 
   List<int> responseBuffer = [];
 
@@ -70,54 +68,52 @@ class SMB {
     String p = '\\\\';
     p += ip;
     p += '\\';
-    if (smbPath != null && smbPath != '') {
+    if (smbPath.isNotEmpty) {
       p += smbPath;
     }
     return p;
   }
 
-  SMB(Uri this.uri, {
-    this.domain,
-    this.debug,
-    this.autoCloseTimeout,
-    this.packetConcurrency,
+  SMB(
+    Uri this.uri, {
+    this.domain = "",
+    this.debug = false,
+    this.autoCloseTimeout = const Duration(milliseconds: 2000),
+    this.packetConcurrency = 20,
   }) {
-    if(uri.scheme != 'smb') {
+    if (uri.scheme != 'smb') {
       throw "Scheme not smb";
     }
 
-    if(uri.pathSegments.length < 1) {
+    if (uri.pathSegments.length < 1) {
       throw "At least one path is required";
     }
     this.ip = uri.host;
     this.port = uri.hasPort ? uri.port : 445;
     final userInfo = uri.userInfo.split(':').toList();
 
-    if(userInfo.length >= 1) {
+    if (userInfo.length >= 1) {
       this.username = Uri.decodeComponent(userInfo[0]);
     }
-    if(userInfo.length >= 2) {
+    if (userInfo.length >= 2) {
       this.password = Uri.decodeComponent(userInfo[1]);
     }
 
-    if(this.domain == null){
-      if(userInfo.length >= 3) {
+    if (this.domain.isEmpty) {
+      if (userInfo.length >= 3) {
         this.domain = Uri.decodeComponent(userInfo[2]);
+      } else {
+        this.domain = 'WORKGROUP';
       }
     }
-    this.domain ??= 'WORKGROUP';
 
     this.smbPath = uri.pathSegments.first;
     this.rootPath = uri.pathSegments.sublist(1);
 
-    if(this.debug){
+    if (this.debug) {
       print(this);
     }
-
-    this.packetConcurrency ??= 20;
-    this.autoCloseTimeout ??= Duration(milliseconds: 2000);
   }
-
 
   toString() {
     return "==== SMB ======================\n"
@@ -128,18 +124,18 @@ class SMB {
         "username: $username \n"
         "password: $password \n"
         "    path: $smbPath \n"
-           "===============================";
+        "===============================";
   }
 
   Future connect() async {
-
-    if(connectLock || connected) {
+    if (connectLock || connected) {
       throw "Cannot connect repeatedly";
     }
 
     this.connectLock = true;
 
-    this.socket = await Socket.connect(this.ip, this.port ?? 445, timeout: Duration(seconds: 5));
+    this.socket = await Socket.connect(this.ip, this.port ?? 445,
+        timeout: Duration(seconds: 5));
 
     socket.listen(response);
 
@@ -182,10 +178,9 @@ class SMB {
 
   Future<SMBMessage> getResponse(Structure structure, int messageId) async {
     final mid = messageId.toRadixString(16).padLeft(8, '0');
-    Completer c = new Completer<SMBMessage>();
+    Completer<SMBMessage> c = Completer<SMBMessage>();
     responsesCompleter[mid] = c;
     SMBMessage msg = await c.future;
-
 
     msg = await structure.preProcessing(msg);
     if (structure.successCode == msg.status.code) {
@@ -197,26 +192,29 @@ class SMB {
   }
 
   response(List<int> data) {
-
     responseBuffer.addAll(data);
 
-    while(true) {
+    while (true) {
       if (responseBuffer.length >= 4) {
         try {
-          final msgLength = ByteData.view(Uint8List.fromList(responseBuffer).buffer,0, 4).getUint32(0, Endian.big);
-          if(msgLength == 0){
+          final msgLength =
+              ByteData.view(Uint8List.fromList(responseBuffer).buffer, 0, 4)
+                  .getUint32(0, Endian.big);
+          if (msgLength == 0) {
             print('msgLength Is 0');
           } else if (responseBuffer.length >= msgLength + 4) {
-            final headerData = readHeaders(responseBuffer.sublist(4, 4 + HeaderLength));
+            final headerData =
+                readHeaders(responseBuffer.sublist(4, 4 + HeaderLength));
             var mId = headerData["MessageId"].toRadixString(16).padLeft(8, '0');
-            final buffer = responseBuffer.sublist(4 + HeaderLength, 4 + msgLength);
+            final buffer =
+                responseBuffer.sublist(4 + HeaderLength, 4 + msgLength);
             final msg = SMBMessage(
                 messageId: mId,
                 header: headerData,
                 buffer: buffer,
                 status: getStatus(headerData['Status']));
             if (responsesCompleter[mId] != null) {
-              responsesCompleter[mId].complete(msg);
+              responsesCompleter[mId]!.complete(msg);
               responsesCompleter[mId] = null;
             } else {
               throw "no find responsesCompleter MessigeId:${mId}";
@@ -225,14 +223,13 @@ class SMB {
           } else {
             return;
           }
-        } catch(err) {
+        } catch (err) {
           throw err;
         }
       } else {
         return;
       }
     }
-
   }
 
   Map<String, dynamic> readHeaders(List<int> buffer) {
@@ -277,21 +274,21 @@ class SMB {
 
   Future<List<int>> readFile(
     SMBFile file, {
-    int length,
-    int offset,
+    int? length,
+    int? offset,
   }) async {
     length ??= file.fileLength;
     offset ??= 0;
     final start = offset;
     offset = 0;
-    final List<int> result = List(length);
+    final List<int> result = List.filled(length!, 0);
 
     await ConcurrentQueue(this.packetConcurrency, () {
-      if(offset >= length) return null;
-      final packetOffset = start + offset;
+      if (offset! >= length!) return null;
+      final packetOffset = start + offset!;
       final resultOffset = offset;
-      int packetSize = min(MAX_READ_LENGTH, length - offset);
-      offset += packetSize;
+      int packetSize = min(MAX_READ_LENGTH, length - offset!);
+      offset = packetSize + offset!;
       return (() async {
         final msg = await request(ReadFile(), {
           'fileId': file.fileId,
@@ -299,10 +296,10 @@ class SMB {
           'offset': packetOffset,
         });
 
-        final List<int> buf = msg.data['Buffer'];
-        if(buf is List) {
+        final buf = msg.data['Buffer'];
+        if (buf is List) {
           int i = 0;
-          buf.forEach((v) => result[resultOffset + (i++)] = v);
+          buf.forEach((v) => result[resultOffset! + (i++)] = v);
         }
       })();
     }).future;
@@ -310,16 +307,16 @@ class SMB {
     return result;
   }
 
-
   _parsePath(String path) {
     final u = Uri.parse(path);
     final List<String> pathSegments = [];
     pathSegments.addAll(this.rootPath);
     pathSegments.addAll(u.pathSegments);
-    final p = Uri.parse(pathSegments.where((v) => v != '').join('/')).toFilePath(windows: true);;
+    final p = Uri.parse(pathSegments.where((v) => v != '').join('/'))
+        .toFilePath(windows: true);
+    ;
     return p;
   }
-
 
   Future<SMBFile> open(String path, {int mask = FILE_OPEN}) async {
     path = _parsePath(path);
@@ -328,7 +325,7 @@ class SMB {
       'desiredAccess': mask,
     });
     final file = SMBFile.formMessage(msg);
-    if(this.debug) {
+    if (this.debug) {
       print(file);
     }
     return file;
@@ -342,13 +339,15 @@ class SMB {
 
   unlink() {}
 
-  Future<List<SMBFile>> readDirectory(String path, {String filter = '*'}) async {
+  Future<List<SMBFile>> readDirectory(String path,
+      {String filter = '*'}) async {
     final file = await this.open(path);
-    if(!file.isDirectory) {
+    if (!file.isDirectory) {
       await close(file);
       throw "Not a Directory";
     }
-    final msg = await request(QueryDirectory(), { 'fileId': file.fileId, 'filter': filter });
+    final msg = await request(
+        QueryDirectory(), {'fileId': file.fileId, 'filter': filter});
     final files = parseFiles(msg.data['Buffer']);
     await close(file);
     return files;

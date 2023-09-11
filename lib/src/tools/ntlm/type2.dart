@@ -6,19 +6,19 @@ import './common/flags.dart' as flags;
 ///
 /// Used to calculate the type 3 response.
 class Type2Message {
-  Uint8List signature;
-  int type;
-  int targetNameLength;
-  int targetNameMaxLength;
-  int targetNameOffset;
-  Uint8List targetName;
-  int negotiateFlags;
-  Uint8List serverChallenge;
-  Uint8List reserved;
-  int targetInfoLength;
-  int targetInfoMaxLength;
-  int targetInfoOffset;
-  Uint8List targetInfo;
+  late Uint8List signature;
+  late int type;
+  late int targetNameLength;
+  late int targetNameMaxLength;
+  late int targetNameOffset;
+  late Uint8List targetName;
+  late int negotiateFlags;
+  late Uint8List serverChallenge;
+  late Uint8List reserved;
+  late int targetInfoLength;
+  late int targetInfoMaxLength;
+  late int targetInfoOffset;
+  late Uint8List targetInfo;
 
   @override
   String toString() {
@@ -45,8 +45,7 @@ class Type2Message {
 
 /// Extract the information from the type 2 [rawMsg] into an object.
 Type2Message parseType2Message(List<int> buffer) {
-
-  final buf =Uint8List.fromList(buffer).buffer;
+  final buf = Uint8List.fromList(buffer).buffer;
   ByteData bufView = new ByteData.view(buf);
   Type2Message msg = new Type2Message();
 

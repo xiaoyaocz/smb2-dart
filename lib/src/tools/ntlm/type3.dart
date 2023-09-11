@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:utf/utf.dart';
+import 'package:utf_convert/utf_convert.dart';
 import './common/utils.dart';
 import './common/flags.dart' as flags;
 import './type2.dart';
@@ -10,10 +10,10 @@ List<int> createType3Message(
   Type2Message msg2, {
   String domain = "",
   String hostname = "",
-  String username,
-  String password,
-  String lmPassword,
-  String ntPassword,
+  String username = "",
+  String? password,
+  String? lmPassword,
+  String? ntPassword,
 }) {
   if (password == null && (lmPassword == null || ntPassword == null)) {
     throw new ArgumentError(
@@ -35,7 +35,7 @@ List<int> createType3Message(
   String encryptedRandomSessionKey = "";
 
   var encode = (String str) => isUnicode
-      ? new Uint8List.fromList(encodeUtf16le(str))
+      ? Uint8List.fromList(encodeUtf16le(str).cast<int>())
       : ascii.encode(str);
   Uint8List workstationBytes = encode(hostname);
   Uint8List domainBytes = encode(domain);
@@ -45,23 +45,23 @@ List<int> createType3Message(
   Uint8List lmChallengeResponse = calculateResponse(
       lmPassword != null
           ? base64Decode(lmPassword)
-          : createLMHashedPasswordV1(password),
+          : createLMHashedPasswordV1(password!),
       serverNonce);
   Uint8List ntChallengeResponse = calculateResponse(
       ntPassword != null
           ? base64Decode(ntPassword)
-          : createNTHashedPasswordV1(password),
+          : createNTHashedPasswordV1(password!),
       serverNonce);
   if (isNegotiateExtendedSecurity) {
     Uint8List passwordHash = ntPassword != null
         ? base64Decode(ntPassword)
-        : createNTHashedPasswordV1(password);
+        : createNTHashedPasswordV1(password!);
     Uint8List clientNonce = createRandomNonce();
     Map<String, Uint8List> challenges =
         calculateNTLM2Response(passwordHash, serverNonce, clientNonce);
 
-    lmChallengeResponse = challenges["LM"];
-    ntChallengeResponse = challenges["NT"];
+    lmChallengeResponse = challenges["LM"]!;
+    ntChallengeResponse = challenges["NT"]!;
   }
 
   const signature = "NTLMSSP\x00";

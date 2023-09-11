@@ -1,12 +1,10 @@
-import 'package:utf/utf.dart';
+import 'package:utf_convert/utf_convert.dart';
 
 import 'base.dart';
 
-
 class Create extends Structure {
   @override
-  Map<String, dynamic> get headers =>
-      {
+  Map<String, dynamic> get headers => {
         'Command': 'CREATE',
         'TreeId': connection.treeId,
       };
@@ -22,7 +20,8 @@ class Create extends Structure {
     Field('DesiredAccess', 4, defaultValue: 0x00100081),
     Field('FileAttributes', 4, defaultValue: 0x00000000),
     Field('ShareAccess', 4, defaultValue: 0x00000007),
-    Field('CreateDisposition', 4, defaultValue: 0x00000001 ), // todo: 枚举 constants.FILE_OPEN
+    Field('CreateDisposition', 4,
+        defaultValue: 0x00000001), // todo: 枚举 constants.FILE_OPEN
     Field('CreateOptions', 4, defaultValue: 0x00000020),
     Field('NameOffset', 2),
     Field('NameLength', 2),
@@ -55,16 +54,14 @@ class Create extends Structure {
 }
 
 class OpenFile extends Create {
-
   @override
-  List<int> getBuffer([Map<String, dynamic> data]) {
-    final buffer = encodeUtf16le(data['path']);
+  List<int> getBuffer([Map<String, dynamic>? data]) {
+    final buffer = encodeUtf16le(data?['path']);
     return super.getBuffer({
       'Buffer': buffer,
       'NameOffset': 0x0078,
       'CreateContextsOffset': 0x007a + buffer.length,
-      'DesiredAccess': data['desiredAccess'],
+      'DesiredAccess': data?['desiredAccess'],
     });
   }
-
 }

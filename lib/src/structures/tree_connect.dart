@@ -1,10 +1,8 @@
-import 'package:utf/utf.dart';
+import 'package:utf_convert/utf_convert.dart';
 
 import 'base.dart';
-import 'dart:convert';
 
 class TreeConnect extends Structure {
-
   @override
   Map<String, dynamic> headers = {
     'Command': 'TREE_CONNECT',
@@ -33,17 +31,16 @@ class TreeConnect extends Structure {
   ];
 
   @override
-  List<int> getBuffer([Map<String, dynamic> _data ]) {
+  List<int> getBuffer([Map<String, dynamic>? _data]) {
     Map<String, dynamic> data = {};
-    if(data != null) data.addAll(_data);
-
-    data['Buffer'] = encodeUtf16le(connection.fullPath);
+    //if (_data != null) data.addAll(_data);
+    data.addAll(_data ?? {});
+    data['Buffer'] = encodeUtf16le(connection.fullPath).cast<int>();
 
     return super.getBuffer(data);
   }
 
-  onSuccess(msg){
+  onSuccess(msg) {
     connection.treeId = msg.header['TreeId'];
   }
-
 }

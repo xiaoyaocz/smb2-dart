@@ -1,12 +1,10 @@
-
 import 'dart:async';
 
-typedef Future TaskBuilder();
+typedef Future? TaskBuilder();
 
 class ConcurrentQueue {
-
   int count = 0;
-  TaskBuilder taskBuilder;
+  TaskBuilder? taskBuilder;
 
   Set<Future> tasks = Set();
 
@@ -21,10 +19,9 @@ class ConcurrentQueue {
   Future get future => completer.future;
 
   getTask() {
-
     while (tasks.length < this.count && stop == false) {
-      final task = this.taskBuilder();
-      if(task == null) {
+      final task = this.taskBuilder?.call();
+      if (task == null) {
         stop = true;
         return;
       }
@@ -39,10 +36,8 @@ class ConcurrentQueue {
       });
     }
 
-    if(tasks.length == 0 && stop == true){
+    if (tasks.length == 0 && stop == true) {
       completer.complete();
-
     }
   }
-
 }

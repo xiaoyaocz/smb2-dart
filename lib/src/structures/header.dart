@@ -1,4 +1,3 @@
-
 import 'base.dart';
 
 const HeaderLength = 64;
@@ -25,7 +24,6 @@ const HeaderTranslateCommand = {
   'OPLOCK_BREAK': 0x0012,
 };
 
-
 class HeaderSync extends Structure {
   final List<int> processId;
   final int sessionId;
@@ -34,28 +32,28 @@ class HeaderSync extends Structure {
 
   @override
   List<Field> get request => [
-    Field('ProtocolId', 4, defaultValue: Structure.protocolId),
-    Field('StructureSize', 2, defaultValue: HeaderLength),
-    Field('CreditCharge', 2),
-    Field('Status', 4),
-    Field('Command', 2, translates: HeaderTranslateCommand),
-    Field('Credit', 2, defaultValue: 126),
-    Field('Flags', 4),
-    Field('NextCommand', 4),
-    Field('MessageId', 4),
-    Field('MessageIdHigh', 4),
-    Field('ProcessId', 4, defaultValue: processId),
-    Field('TreeId', 4),
-    Field('SessionId', 8, defaultValue: sessionId),
-    Field('Signature', 16),
-  ];
+        Field('ProtocolId', 4, defaultValue: Structure.protocolId),
+        Field('StructureSize', 2, defaultValue: HeaderLength),
+        Field('CreditCharge', 2),
+        Field('Status', 4),
+        Field('Command', 2, translates: HeaderTranslateCommand),
+        Field('Credit', 2, defaultValue: 126),
+        Field('Flags', 4),
+        Field('NextCommand', 4),
+        Field('MessageId', 4),
+        Field('MessageIdHigh', 4),
+        Field('ProcessId', 4, defaultValue: processId),
+        Field('TreeId', 4),
+        Field('SessionId', 8, defaultValue: sessionId),
+        Field('Signature', 16),
+      ];
 
   @override
   List<Field> get response => request;
 
   HeaderSync({
-    this.processId,
-    this.sessionId,
+    required this.processId,
+    required this.sessionId,
   });
 }
 
@@ -67,26 +65,26 @@ class HeaderAsync extends Structure {
 
   @override
   List<Field> get request => [
-    Field('ProtocolId', 4, defaultValue: Structure.protocolId),
-    Field('StructureSize', 2, defaultValue: HeaderLength),
-    Field('CreditCharge', 2),
-    Field('Status', 4),
-    Field('Command', 2, translates: HeaderTranslateCommand),
-    Field('Credit', 2, defaultValue: 126),
-    Field('Flags', 4),
-    Field('NextCommand', 4),
-    Field('MessageId', 4),
-    Field('MessageIdHigh', 4),
-    Field('AsyncId', 8),
-    Field('SessionId', 8, defaultValue: sessionId),
-    Field('Signature', 16),
-  ];
+        Field('ProtocolId', 4, defaultValue: Structure.protocolId),
+        Field('StructureSize', 2, defaultValue: HeaderLength),
+        Field('CreditCharge', 2),
+        Field('Status', 4),
+        Field('Command', 2, translates: HeaderTranslateCommand),
+        Field('Credit', 2, defaultValue: 126),
+        Field('Flags', 4),
+        Field('NextCommand', 4),
+        Field('MessageId', 4),
+        Field('MessageIdHigh', 4),
+        Field('AsyncId', 8),
+        Field('SessionId', 8, defaultValue: sessionId),
+        Field('Signature', 16),
+      ];
 
   @override
   List<Field> get response => request;
   HeaderAsync({
-    this.processId,
-    this.sessionId,
+    required this.processId,
+    required this.sessionId,
   });
 }
 //头  ProtocolId     | size  | cred | status     | comma | Credit | Flags      | NextCommand| MessageId  | MsgIdHigh  | ProcessId          | TreeId      | SessionId                | Signature                                      | data ->

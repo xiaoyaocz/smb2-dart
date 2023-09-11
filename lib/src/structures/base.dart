@@ -6,14 +6,13 @@ import 'package:smb2/src/tools/smb_message.dart';
 import '../../smb2.dart';
 
 abstract class Structure {
-  List<Field> request;
-  List<Field> response;
+  late List<Field> request;
+  late List<Field> response;
   int fixedLength = 0;
   bool useTranslate = false;
   String successCode = 'STATUS_SUCCESS';
 
-  SMB connection;
-
+  late SMB connection;
 
   static final protocolId = [
     0xfe,
@@ -46,17 +45,18 @@ abstract class Structure {
 
   Map<String, dynamic> headers = {};
 
-  List<int> getBuffer([Map<String, dynamic> data ]) {
+  List<int> getBuffer([Map<String, dynamic>? data]) {
     data ??= Map<String, dynamic>();
-    final buffer = ByteDataWriter(bufferLength: fixedLength > 0 ? fixedLength : 512);
+    final buffer =
+        ByteDataWriter(bufferLength: fixedLength > 0 ? fixedLength : 512);
 
     /* 设置动态长度 */
     request.forEach((r) {
-      if(r.dynamicLength != null) {
-        if(r.dynamicLength != '' && data[r.key] != null) {
+      if (r.dynamicLength != null) {
+        if (r.dynamicLength != '' && data![r.key] != null) {
           final v = data[r.key];
-          if(v is List) {
-            data[r.dynamicLength] = v.length;
+          if (v is List) {
+            data[r.dynamicLength!] = v.length;
           } else {
             print(r);
             throw '未实现4';
@@ -69,36 +69,35 @@ abstract class Structure {
       dynamic value = data != null ? data[r.key] : null;
       value ??= r.defaultValue ?? 0;
 
-      if(r.translates != null) {
-        final tv = r.translates[value];
+      if (r.translates != null) {
+        final tv = r.translates?[value];
         if (tv != null) {
           value = tv;
         }
       }
 
-      if(useTranslate == true && Command[r.key] != null) {
+      if (useTranslate == true && Command[r.key] != null) {
         value = Command[r.key];
-      };
+      }
+      ;
 
       value ??= 0;
 
-
-      if([1,2,4,8].contains(r.length) && value is int) {
+      if ([1, 2, 4, 8].contains(r.length) && value is int) {
         buffer.writeUint(r.length, value, Endian.little);
-      }else {
-        List<int> valueListInt;
-        if(value is int) {
+      } else {
+        List<int>? valueListInt;
+        if (value is int) {
           valueListInt = [value];
-        }else if(value is List<int>) {
-          valueListInt = value;
+        } else if (value is List) {
+          valueListInt = value.cast<int>();
         }
 
-        if(valueListInt is List<int>){
-          if(r.length == null || r.length == 0) {
+        if (valueListInt is List<int>) {
+          if (r.length == 0) {
             buffer.write(valueListInt);
           } else {
-
-            final newList = List<int>(r.length);
+            final newList = List<int>.filled(r.length, 0);
             newList.fillRange(0, newList.length, 0);
 
             int i = 0;
@@ -108,45 +107,44 @@ abstract class Structure {
 
             buffer.write(newList);
           }
-        }else {
+        } else {
           print(r);
           throw '未实现3';
         }
       }
-
     });
     return buffer.toBytes().toList();
   }
 
   Map<String, dynamic> parse(List<int> buffer) {
-    if(response.length == 0) return {} as Map<String, dynamic>;
+    if (response.length == 0) return {} as Map<String, dynamic>;
     final reader = ByteDataReader();
     reader.add(buffer);
     Map<String, dynamic> data = {};
 
     response.forEach((r) {
       var value;
-      if(r.dynamicLength != null) {
-        if(data[r.dynamicLength] != null && data[r.dynamicLength] > 0){
+      if (r.dynamicLength != null) {
+        if (data[r.dynamicLength] != null && data[r.dynamicLength] > 0) {
           value = reader.read(data[r.dynamicLength]);
-        }else {
+        } else {
           value = [];
         }
-      }else if(r.length is int && [1,2,4,8].contains(r.length)) {
+      } else if ([1, 2, 4, 8].contains(r.length)) {
         try {
           value = reader.readUint(r.length, Endian.little);
-        }catch (err) {
+        } catch (err) {
           print(r);
           print(this.headers);
           throw (err);
-          value = 0;
+          // value = 0;
         }
       } else {
         value = reader.read(r.length);
       }
-      if(r.translates != null) {
-        final tv = r.translates.map((k, v) => MapEntry(v, k))[data[r.key]];
-        if (tv!= null) {
+      if (r.translates != null) {
+        final tv = r.translates?.map((k, v) => MapEntry(v, k))[data[r.key]];
+        if (tv != null) {
           value = tv;
         }
       }
@@ -156,23 +154,22 @@ abstract class Structure {
     return data;
   }
 
-
   Future<SMBMessage> preProcessing(SMBMessage msg) async {
     return msg;
   }
 
-  onSuccess (SMBMessage msg) {
-  }
-
+  onSuccess(SMBMessage msg) {}
 }
+
 class Field {
   String key;
   int length;
   dynamic defaultValue;
-  Map<String, dynamic> translates;
-  Field(this.key, this.length, {this.defaultValue, this.translates, this.dynamicLength});
+  Map<String, dynamic>? translates;
+  Field(this.key, this.length,
+      {this.defaultValue, this.translates, this.dynamicLength});
 
-  String dynamicLength;
+  String? dynamicLength;
 
   @override
   String toString() {

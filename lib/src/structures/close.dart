@@ -1,5 +1,3 @@
-import 'package:utf/utf.dart';
-
 import 'base.dart';
 
 class CloseFile extends Structure {
@@ -33,9 +31,9 @@ class CloseFile extends Structure {
   ];
 
   @override
-  List<int> getBuffer([Map<String, dynamic> data]) {
+  List<int> getBuffer([Map<String, dynamic>? data]) {
     return super.getBuffer({
-      'FileId': data['fileId'],
+      'FileId': data?['fileId'] ?? "",
     });
   }
 }

@@ -13,7 +13,7 @@ class DESEngine extends BaseBlockCipher {
 
   static const _BLOCK_SIZE = 8;
 
-  List<Int32> _workingKey;
+  List<Int32>? _workingKey;
 
   @override
   String get algorithmName => "DES";
@@ -47,15 +47,15 @@ class DESEngine extends BaseBlockCipher {
       throw new ArgumentError("output buffer too short");
     }
 
-    _desFunc(_workingKey, inp, inpOff, out, outOff);
+    _desFunc(_workingKey!, inp, inpOff, out, outOff);
 
     return _BLOCK_SIZE;
   }
 
   List<Int32> _generateWorkingKey(bool encrypting, Uint8List key) {
-    List<Int32> newKey = new List<Int32>(32);
-    List<bool> pc1m = new List<bool>(56);
-    List<bool> pcr = new List<bool>(56);
+    List<Int32> newKey = List<Int32>.filled(32, Int32(0));
+    List<bool> pc1m = List<bool>.filled(56, false);
+    List<bool> pcr = List<bool>.filled(56, false);
 
     for (int j = 0; j < 56; j++) {
       Int32 l = pc1[j];
@@ -65,8 +65,8 @@ class DESEngine extends BaseBlockCipher {
               0);
     }
 
-    for (Int32 i = new Int32(0); i < 16; i++) {
-      Int32 l, m, n;
+    for (IntX i = Int32(0); i < 16; i++) {
+      IntX l, m, n;
 
       if (encrypting) {
         m = i << 1;
@@ -78,7 +78,7 @@ class DESEngine extends BaseBlockCipher {
       newKey[m.toInt()] = new Int32(0);
       newKey[n.toInt()] = new Int32(0);
 
-      for (Int32 j = new Int32(0); j < 28; j++) {
+      for (IntX j = new Int32(0); j < 28; j++) {
         l = j + totrot[i.toInt()];
         if (l < 28) {
           pcr[j.toInt()] = pc1m[l.toInt()];
@@ -87,7 +87,7 @@ class DESEngine extends BaseBlockCipher {
         }
       }
 
-      for (Int32 j = new Int32(28); j < 56; j++) {
+      for (IntX j = new Int32(28); j < 56; j++) {
         l = j + totrot[i.toInt()];
         if (l < 56) {
           pcr[j.toInt()] = pc1m[l.toInt()];
@@ -96,7 +96,7 @@ class DESEngine extends BaseBlockCipher {
         }
       }
 
-      for (Int32 j = new Int32(0); j < 24; j++) {
+      for (IntX j = new Int32(0); j < 24; j++) {
         if (pcr[pc2[j.toInt()].toInt()]) {
           newKey[m.toInt()] |= bigbyte[j.toInt()];
         }

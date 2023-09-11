@@ -8,11 +8,15 @@ class SMBMessage {
   Map<String, dynamic> header;
   List<int> buffer;
 
-  Map<String, dynamic> data;
+  late Map<String, dynamic> data;
 
   MsException status;
 
-  SMBMessage({this.messageId, this.header, this.buffer, this.status});
+  SMBMessage(
+      {required this.messageId,
+      required this.header,
+      required this.buffer,
+      required this.status});
 
   setData(Map<String, dynamic> data) {
     this.data = data;
@@ -66,21 +70,21 @@ class SMBMessage {
 //}
 
 class SMBFile {
-  SMBMessage msg;
-  int index;
-  DateTime creationTime;
-  DateTime lastAccessTime;
-  DateTime lastWriteTime;
-  DateTime changeTime;
-  int endOfFile;
-  int allocationSize;
-  int fileAttributes;
-  int filenameLength;
-  int eaSize;
-  int shortNameLength;
-  List<int> fileId;
-  String shortName;
-  String fileName;
+  SMBMessage? msg;
+  int? index;
+  DateTime? creationTime;
+  DateTime? lastAccessTime;
+  DateTime? lastWriteTime;
+  DateTime? changeTime;
+  int? endOfFile;
+  int? allocationSize;
+  int? fileAttributes;
+  int? filenameLength;
+  int? eaSize;
+  int? shortNameLength;
+  List<int>? fileId;
+  String? shortName;
+  String? fileName;
 
   SMBFile({
     this.index,
@@ -101,7 +105,7 @@ class SMBFile {
 
   get fileLength => endOfFile;
 
-  _fileAttributesIs(int v) => fileAttributes & v == v;
+  _fileAttributesIs(int v) => (fileAttributes ?? 0) & v == v;
 
   get isDirectory => _fileAttributesIs(ATTR_DIRECTORY);
 

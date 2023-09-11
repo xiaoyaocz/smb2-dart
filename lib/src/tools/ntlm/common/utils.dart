@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'package:utf/utf.dart' as utf;
+import 'package:utf_convert/utf_convert.dart' as utf;
 import 'package:pointycastle/api.dart';
 import 'package:pointycastle/digests/md4.dart';
 import 'package:pointycastle/digests/md5.dart';
@@ -41,7 +41,7 @@ void _oddParity(List<int> bytes) {
 KeyParameter _createDESKey(List<int> bytes, int offset) {
   Uint8List uint8Bytes = new Uint8List.fromList(bytes);
   List<int> keyBytes = new List.generate(7, (i) => uint8Bytes[i + offset]);
-  List<int> material = new List<int>(8);
+  List<int> material = List<int>.filled(8, 0);
   material[0] = keyBytes[0].toSigned(8);
   material[1] = (keyBytes[0] << 7 | (keyBytes[1] & 0xff) >> 1).toSigned(8);
   material[2] = (keyBytes[1] << 6 | (keyBytes[2] & 0xff) >> 2).toSigned(8);
@@ -76,9 +76,9 @@ Uint8List createLMHashedPasswordV1(String password) {
 }
 
 Uint8List createNTHashedPasswordV1(String password) {
-  List<int> unicodePassword = utf.encodeUtf16le(password);
+  List<int> unicodePassword = utf.encodeUtf16le(password).cast<int>();
   Digest md4 = new MD4Digest();
-  return md4.process(new Uint8List.fromList(unicodePassword));
+  return md4.process(Uint8List.fromList(unicodePassword));
 }
 
 Uint8List calculateResponse(Uint8List hash, Uint8List challenge) {

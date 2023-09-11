@@ -1,18 +1,16 @@
-
 import 'package:smb2/src/structures/base.dart';
 
 class ReadFile extends Structure {
   @override
-  Map<String, dynamic> get headers =>
-      {
+  Map<String, dynamic> get headers => {
         'Command': 'READ',
         'TreeId': connection.treeId,
       };
 
   @override
   List<Field> request = [
-    Field('StructureSize', 2,defaultValue: 49),
-    Field('Padding', 1,defaultValue: 0x50),
+    Field('StructureSize', 2, defaultValue: 49),
+    Field('Padding', 1, defaultValue: 0x50),
     Field('Flags', 1),
     Field('Length', 4),
     Field('Offset', 8),
@@ -36,14 +34,13 @@ class ReadFile extends Structure {
     Field('Buffer', 0, dynamicLength: 'DataLength'),
   ];
 
-
   @override
-  List<int> getBuffer([Map<String, dynamic> data]) {
+  List<int> getBuffer([Map<String, dynamic>? data]) {
     // TODO: 数据检查
     return super.getBuffer({
-      'FileId': data['fileId'],
-      'Length': data['length'],
-      'Offset': data['offset'],
+      'FileId': data?['fileId'],
+      'Length': data?['length'],
+      'Offset': data?['offset'],
     });
   }
 }

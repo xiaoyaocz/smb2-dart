@@ -3,7 +3,6 @@ import 'package:smb2/src/tools/ntlm/type2.dart';
 import 'package:smb2/src/tools/ntlm/type3.dart';
 import 'package:smb2/src/tools/smb_message.dart';
 
-import '../../smb2.dart';
 import 'base.dart';
 
 /*
@@ -39,8 +38,8 @@ class SessionSetup extends Structure {
   List<Field> request = [
     Field('StructureSize', 2, defaultValue: 25),
     Field('Flags', 1),
-    Field('SecurityMode', 1,  defaultValue: 1),
-    Field('Capabilities', 4,  defaultValue: 1),
+    Field('SecurityMode', 1, defaultValue: 1),
+    Field('Capabilities', 4, defaultValue: 1),
     Field('Channel', 4),
     Field('SecurityBufferOffset', 2, defaultValue: 88),
     Field('SecurityBufferLength', 2),
@@ -54,17 +53,15 @@ class SessionSetup extends Structure {
     Field('SessionFlags', 2),
     Field('SecurityBufferOffset', 2),
     Field('SecurityBufferLength', 2),
-    Field('Buffer',0, dynamicLength: 'SecurityBufferLength'),
+    Field('Buffer', 0, dynamicLength: 'SecurityBufferLength'),
   ];
-
 }
 
-
 class SessionSetupStep1 extends SessionSetup {
-
   @override
-  List<int> getBuffer([Map<String, dynamic> data ]) {
-    final buf = createType1Message(hostname: this.connection.ip, ntdomain: this.connection.domain);
+  List<int> getBuffer([Map<String, dynamic>? data]) {
+    final buf = createType1Message(
+        hostname: this.connection.ip, ntdomain: this.connection.domain);
     Map<String, dynamic> data = {
 //      'SecurityBufferLength': buf.length,
       'Buffer': buf,
@@ -75,24 +72,25 @@ class SessionSetupStep1 extends SessionSetup {
   @override
   String successCode = 'STATUS_MORE_PROCESSING_REQUIRED';
 
-  onSuccess (SMBMessage msg) {
+  onSuccess(SMBMessage msg) {
     connection.sessionId = msg.header['SessionId'];
     final t2msg = parseType2Message(msg.data['Buffer']);
     connection.type2Message = t2msg;
     connection.nonce = t2msg.serverChallenge.toList();
   }
-
 }
 
-
 class SessionSetupStep2 extends SessionSetup {
-
   @override
   String successCode = 'STATUS_SUCCESS';
 
   @override
-  List<int> getBuffer([Map<String, dynamic> data ]) {
-    final buf = createType3Message(this.connection.type2Message, hostname: this.connection.ip, domain: this.connection.domain, password: this.connection.password, username: this.connection.username);
+  List<int> getBuffer([Map<String, dynamic>? data]) {
+    final buf = createType3Message(this.connection.type2Message,
+        hostname: this.connection.ip,
+        domain: this.connection.domain,
+        password: this.connection.password,
+        username: this.connection.username);
     Map<String, dynamic> data = {
       'Buffer': buf,
     };

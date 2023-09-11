@@ -1,17 +1,14 @@
-
 import 'dart:typed_data';
 
 import 'package:smb2/src/structures/base.dart';
 import 'package:smb2/src/tools/buffer.dart';
-import 'package:smb2/src/tools/constant.dart';
 import 'package:smb2/src/tools/smb_message.dart';
 import 'package:smb2/src/tools/tools.dart';
-import 'package:utf/utf.dart';
+import 'package:utf_convert/utf_convert.dart';
 
 class QueryDirectory extends Structure {
   @override
-  Map<String, dynamic> get headers =>
-      {
+  Map<String, dynamic> get headers => {
         'Command': 'QUERY_DIRECTORY',
         'TreeId': connection.treeId,
       };
@@ -23,9 +20,9 @@ class QueryDirectory extends Structure {
     Field('Flags', 1),
     Field('FileIndex', 4),
     Field('FileId', 16),
-    Field('FileNameOffset', 2,defaultValue:  96),
+    Field('FileNameOffset', 2, defaultValue: 96),
     Field('FileNameLength', 2),
-    Field('OutputBufferLength', 4, defaultValue:  0x00010000),
+    Field('OutputBufferLength', 4, defaultValue: 0x00010000),
     Field('Buffer', 0, dynamicLength: 'FileNameLength'),
   ];
 
@@ -38,41 +35,32 @@ class QueryDirectory extends Structure {
   ];
 
   @override
-  List<int> getBuffer([Map<String, dynamic> data]) {
+  List<int> getBuffer([Map<String, dynamic>? data]) {
     // TODO: 数据检查
-    final buffer = encodeUtf16le(data['filter'] ?? '*');
+    final buffer = encodeUtf16le(data?['filter'] ?? '*');
     return super.getBuffer({
-      'FileId': data['fileId'],
+      'FileId': data?['fileId'],
       'Buffer': buffer,
     });
   }
-
 }
 
-
-List<SMBFile> parseFiles (List<int> buffer) {
+List<SMBFile> parseFiles(List<int> buffer) {
   final reader = ByteData.view(Uint8List.fromList(buffer).buffer);
   final List<SMBFile> files = [];
   var offset = 0;
   var nextFileOffset = -1;
   while (nextFileOffset != 0) {
     // extract next file offset
-    nextFileOffset = reader.getUint32(offset, Endian.little) ;
+    nextFileOffset = reader.getUint32(offset, Endian.little);
     // extract the file
-    files.add(
-        parseFile(
-            buffer.sublist(
-                offset + 4,
-                nextFileOffset != 0 ? offset + nextFileOffset : buffer.length
-            )
-        )
-    );
+    files.add(parseFile(buffer.sublist(offset + 4,
+        nextFileOffset != 0 ? offset + nextFileOffset : buffer.length)));
     // move to nex file
     offset += nextFileOffset;
   }
   return files;
 }
-
 
 parseFile(List<int> buffer) {
   final reader = ByteDataReader(endian: Endian.little);
@@ -91,11 +79,11 @@ parseFile(List<int> buffer) {
   file.eaSize = reader.readUint(4);
   file.shortNameLength = reader.readUint(1);
   reader.skip(1);
-  file.shortName = decodeUtf16le(reader.read(file.shortNameLength));
-  reader.skip(24 - file.shortNameLength);
+  file.shortName = decodeUtf16le(reader.read(file.shortNameLength!));
+  reader.skip(24 - file.shortNameLength!);
   reader.skip(2);
   file.fileId = reader.read(8);
-  file.fileName = decodeUtf16le(reader.read(file.filenameLength));
+  file.fileName = decodeUtf16le(reader.read(file.filenameLength!));
 
   return file;
 }
